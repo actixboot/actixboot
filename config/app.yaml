@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  addr: 127.0.0.1
+
+log:
+  level: info
+
+db:
+  host: ${DB_HOST:localhost}
+  port: 3306
+  username: postgres
+  password: postgres
+  db_name: postgres
+  connect_timeout: 3
+
+security:
+  oauth2:
+    middleware:
+      jwks: http://localhost:8000/jwks
+
