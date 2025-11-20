@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["crates/actix_boot_repository_macros", "crates/actix_boot_service_macros", "migration"]
+members = ["crates/actix_boot_repository_macros", "crates/actix_boot_service_macros", "example", "migration"]
 
 [features]
 default = ["postgres"]

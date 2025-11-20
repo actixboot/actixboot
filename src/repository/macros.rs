@@ -1,0 +1,1 @@
+pub use actix_boot_repository_macros::repository;

@@ -49,6 +49,12 @@ fn impl_derive_service(input: DeriveInput) -> syn::Result<TokenStream> {
         }
       }
     }
+
+    impl actix_boot::di::GetOrCreate for #ident {
+      fn get_or_create(ctx: &actix_boot::di::DIContext) -> actix_web::web::Data<Self> {
+        actix_web::web::Data::from(ctx.get_service::<#ident>())
+      }
+    }
   }.into())
 }
 
@@ -61,10 +67,7 @@ fn get_fields(input: &DeriveInput) -> syn::Result<Vec<Field>> {
   };
 
   let Fields::Named(FieldsNamed { named, .. }) = fields else {
-    return Err(syn::Error::new_spanned(
-      input,
-      "Use service only structs with named fields"
-    ));
+   return Ok(vec![]);
   };
 
   Ok(named.iter().map(|field| Field {

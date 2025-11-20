@@ -1,0 +1,1 @@
+pub use actix_boot_service_macros::Service;

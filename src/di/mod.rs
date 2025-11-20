@@ -1,8 +1,13 @@
-use sea_orm::prelude::DatabaseConnection;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock, RwLock};
+use actix_web::web::Data;
+use sea_orm::DatabaseConnection;
 use crate::service::Service;
+
+pub trait GetOrCreate {
+  fn get_or_create(ctx: &DIContext) -> Data<Self>;
+}
 
 pub struct DIContext {
   repositories: RwLock<HashMap<TypeId, Arc<dyn Any + Send + Sync>>>,
