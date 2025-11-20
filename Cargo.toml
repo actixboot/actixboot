@@ -15,7 +15,7 @@ postgres = ["sea-orm/sqlx-postgres"]
 sea-orm = { version = "1.1.19", features = ["runtime-tokio-native-tls"] }
 
 [dependencies]
-actix_boot_service_macros = {path = "crates/actix_boot_service_macros" }
+actix_boot_service_macros = { path = "crates/actix_boot_service_macros" }
 sea-orm = { workspace = true }
 actix_boot_repository_macros = { path = "crates/actix_boot_repository_macros" }
 log = "0.4.28"

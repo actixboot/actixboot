@@ -25,13 +25,13 @@ fn impl_derive_service(input: DeriveInput) -> syn::Result<TokenStream> {
 
     if field_name.ends_with(REPOSITORY_SUFFIX) {
       return Ok(quote! {
-        #field_ident: repositories.get_repository()
+        #field_ident: context.get_repository()
       });
     }
 
     if field_name.ends_with(SERVICE_SUFFIX) {
       return Ok(quote! {
-        #field_ident: services.get_service()
+        #field_ident: context.get_service()
       });
     }
 
@@ -43,7 +43,7 @@ fn impl_derive_service(input: DeriveInput) -> syn::Result<TokenStream> {
 
   Ok(quote! {
     impl actix_boot::service::Service for #ident {
-      fn new_service(services: &actix_boot::service::Services, repositories: &actix_boot::repository::Repositories) -> Self {
+      fn new_service(context: &actix_boot::di::DIContext) -> Self {
         Self {
           #(#fields),*
         }

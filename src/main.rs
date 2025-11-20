@@ -1,22 +1,24 @@
+use actix_boot::config::SnokeConfig;
+use actix_boot::repository::{Repository};
+use actix_boot::server::{ApplicationServer, ApplicationServerConfigurer};
+use actix_boot::service::{Service};
+use actix_boot_repository_macros::repository;
+use actix_boot_service_macros::Service;
 use actix_web::dev::Payload;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{FromRequest, HttpRequest, Responder, get};
 use entity::prelude::Post;
 use sea_orm::prelude::*;
 use sea_orm::{Database, DatabaseBackend};
-use actix_boot::config::SnokeConfig;
-use actix_boot::repository::{Repositories, Repository};
-use actix_boot::server::{ApplicationServer, ApplicationServerConfigurer};
-use actix_boot::service::{Service, Services};
-use actix_boot_repository_macros::repository;
 use std::future::{Ready, ready};
 use std::sync::Arc;
-use actix_boot_service_macros::Service;
 
 pub mod entity;
 
 #[derive(Debug)]
 pub struct User;
+
+pub trait UserRepositoryBase {}
 
 #[derive(Clone)]
 pub struct UserRepository {

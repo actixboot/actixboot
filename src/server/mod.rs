@@ -1,9 +1,9 @@
-use crate::repository::Repositories;
-use crate::service::{Service, Services};
+use crate::service::{Service};
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{App, HttpServer};
 use sea_orm::Database;
 use std::sync::Arc;
+use crate::di::DIContext;
 
 pub struct ApplicationServer;
 
@@ -15,15 +15,14 @@ impl ApplicationServer {
     let db = Database::connect("postgres://postgres:postgres@localhost:5432/postgres")
       .await
       .unwrap();
-    let repositories = Arc::new(Repositories::new(db));
-    let services = Arc::new(Services::new(repositories.clone()));
+
+    let context = Arc::new(DIContext::new(db));
 
     HttpServer::new(move || {
       App::new().configure(|app| {
         let app_server_configurer = ApplicationServerConfigurer {
           service_config: app,
-          services: services.clone(),
-          repositories: repositories.clone(),
+          context: context.clone(),
         };
 
         configurer(app_server_configurer);
@@ -37,8 +36,7 @@ impl ApplicationServer {
 
 pub struct ApplicationServerConfigurer<'a> {
   service_config: &'a mut ServiceConfig,
-  services: Arc<Services>,
-  repositories: Arc<Repositories>,
+  context: Arc<DIContext>,
 }
 
 impl ApplicationServerConfigurer<'_> {
@@ -46,7 +44,7 @@ impl ApplicationServerConfigurer<'_> {
   where
     S: Service,
   {
-    let service = self.services.get_service::<S>();
+    let service = self.context.get_service::<S>();
     self.service_config.app_data(Data::from(service));
 
     self
