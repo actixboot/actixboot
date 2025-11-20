@@ -911,6 +911,7 @@ dependencies = [
  "actix-web",
  "actix_boot",
  "sea-orm",
+ "serde",
 ]
 
 [[package]]
