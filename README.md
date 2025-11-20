@@ -1,7 +1,3 @@
-# Snoke
+# Actix Boot
 
-## Features
 
-- Security
-- Easy configuration
-- Logging
