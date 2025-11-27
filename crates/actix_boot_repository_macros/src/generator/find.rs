@@ -1,13 +1,17 @@
+use proc_macro2::Span;
 use quote::quote;
 use std::str::FromStr;
-use proc_macro2::Span;
-use syn::{Path, TraitItemFn, FnArg, ReturnType};
+use syn::{FnArg, Path, ReturnType, TraitItemFn};
 
 pub enum Part {
   Find,
   By,
   Col(syn::Ident),
   And,
+  Gt,
+  Gte,
+  Not,
+  Eq
 }
 
 fn capitalize_first_letter(s: &str) -> String {
@@ -28,7 +32,7 @@ impl FromStr for Part {
       "find" => Ok(Part::Find),
       s => Ok(Part::Col(syn::Ident::new(
         &capitalize_first_letter(s),
-        proc_macro2::Span::call_site()
+        proc_macro2::Span::call_site(),
       ))),
     }
   }
@@ -36,7 +40,7 @@ impl FromStr for Part {
 
 pub fn generate_find_function(
   item: &TraitItemFn,
-  module: &Path
+  module: &Path,
 ) -> syn::Result<proc_macro2::TokenStream> {
   let fn_name = &item.sig.ident;
   let fn_name_str = fn_name.to_string();
@@ -44,7 +48,7 @@ pub fn generate_find_function(
   if !fn_name_str.starts_with("find") {
     return Err(syn::Error::new_spanned(
       fn_name,
-      "Method name must start with 'find'"
+      "Method name must start with 'find'",
     ));
   }
 
@@ -65,7 +69,7 @@ pub fn generate_find_function(
         "Method has {} columns but {} parameters. They must match!",
         columns.len(),
         params.len()
-      )
+      ),
     ));
   }
 
@@ -86,7 +90,7 @@ fn validate_method_structure(parts: &[Part], item: &TraitItemFn) -> syn::Result<
   if !matches!(parts.first(), Some(Part::Find)) {
     return Err(syn::Error::new_spanned(
       item,
-      "Method name must start with 'find'"
+      "Method name must start with 'find'",
     ));
   }
 
@@ -94,7 +98,7 @@ fn validate_method_structure(parts: &[Part], item: &TraitItemFn) -> syn::Result<
   if !has_by {
     return Err(syn::Error::new_spanned(
       item,
-      "Method name must contain 'by' (e.g., find_by_name)"
+      "Method name must contain 'by' (e.g., find_by_name)",
     ));
   }
 
@@ -105,18 +109,12 @@ fn validate_method_structure(parts: &[Part], item: &TraitItemFn) -> syn::Result<
     match part {
       Part::Find => {
         if i != 0 {
-          return Err(syn::Error::new_spanned(
-            item,
-            "'find' must be at the start"
-          ));
+          return Err(syn::Error::new_spanned(item, "'find' must be at the start"));
         }
       }
       Part::By => {
         if found_by {
-          return Err(syn::Error::new_spanned(
-            item,
-            "Only one 'by' is allowed"
-          ));
+          return Err(syn::Error::new_spanned(item, "Only one 'by' is allowed"));
         }
         found_by = true;
         expecting_col = true;
@@ -125,33 +123,31 @@ fn validate_method_structure(parts: &[Part], item: &TraitItemFn) -> syn::Result<
         if !found_by {
           return Err(syn::Error::new_spanned(
             item,
-            "Column names must come after 'by'"
+            "Column names must come after 'by'",
           ));
         }
         expecting_col = false;
       }
       Part::And => {
         if !found_by {
-          return Err(syn::Error::new_spanned(
-            item,
-            "'and' must come after 'by'"
-          ));
+          return Err(syn::Error::new_spanned(item, "'and' must come after 'by'"));
         }
         if expecting_col {
           return Err(syn::Error::new_spanned(
             item,
-            "'and' must be followed by a column name"
+            "'and' must be followed by a column name",
           ));
         }
         expecting_col = true;
       }
+      _ => {}
     }
   }
 
   if expecting_col {
     return Err(syn::Error::new_spanned(
       item,
-      "Method name must end with a column name"
+      "Method name must end with a column name",
     ));
   }
 
@@ -182,7 +178,7 @@ fn extract_params(item: &TraitItemFn) -> syn::Result<Vec<syn::Ident>> {
         } else {
           return Err(syn::Error::new_spanned(
             pat_type,
-            "Only simple parameter names are supported"
+            "Only simple parameter names are supported",
           ));
         }
       }
@@ -195,7 +191,7 @@ fn extract_params(item: &TraitItemFn) -> syn::Result<Vec<syn::Ident>> {
 fn generate_query_chain(
   module: &Path,
   columns: &[syn::Ident],
-  params: &[syn::Ident]
+  params: &[syn::Ident],
 ) -> proc_macro2::TokenStream {
   let mut filters = Vec::new();
 

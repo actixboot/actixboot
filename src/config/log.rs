@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
 use log::LevelFilter;
 use serde::Deserialize;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct LogConfig {
@@ -28,7 +28,7 @@ impl Display for LogLevel {
     match self {
       LogLevel::Off => f.write_str("Off"),
       LogLevel::Error => f.write_str("Error"),
-      LogLevel::Warn =>  f.write_str("Warn"),
+      LogLevel::Warn => f.write_str("Warn"),
       LogLevel::Info => f.write_str("Info"),
       LogLevel::Debug => f.write_str("Debug"),
       LogLevel::Trace => f.write_str("Trace"),

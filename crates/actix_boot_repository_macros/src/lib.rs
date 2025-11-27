@@ -7,6 +7,7 @@ use syn::punctuated::Punctuated;
 use crate::generator::generate_repository_function;
 
 mod generator;
+mod parse;
 
 #[proc_macro_attribute]
 pub fn repository(attr: TokenStream, item: TokenStream) -> TokenStream {
