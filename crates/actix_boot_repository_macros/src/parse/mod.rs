@@ -1,6 +1,6 @@
-use std::io::Cursor;
 use std::iter::Peekable;
 use std::slice::Iter;
+use quote::quote;
 use crate::parse::FnType::Find;
 
 #[derive(Debug)]
@@ -11,9 +11,9 @@ pub enum ParseToken {
   DeleteBy(Vec<ParseTokenCol>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParseTokenCol {
-  name: String,
+  pub name: String,
   filters: Vec<ColFilter>
 }
 
@@ -156,7 +156,7 @@ pub enum ColFilter {
   Lte,
   NotBetween,
   Between,
-  EndWith,
+  EndsWith,
   StartsWith,
   Contains,
   Like,
@@ -165,6 +165,30 @@ pub enum ColFilter {
   IsNotIn,
   IsNull,
   IsNotNull,
+}
+
+impl ColFilter {
+  pub fn quote(&self, param_ident: &syn::Ident) -> proc_macro2::TokenStream {
+    match self {
+      ColFilter::Eq => quote! {.eq(#param_ident)},
+      ColFilter::NotEq => quote! {.ne(#param_ident)},
+      ColFilter::Gt => quote! {.gt(#param_ident)},
+      ColFilter::Gte => quote! {.gte(#param_ident)},
+      ColFilter::Lt => quote! {.lt(#param_ident)},
+      ColFilter::Lte => quote! {.lte(#param_ident)},
+      ColFilter::Between => quote! {.between(#param_ident)},
+      ColFilter::NotBetween => quote! {.not_between(#param_ident)},
+      ColFilter::EndsWith => quote! {.ends_with(#param_ident)},
+      ColFilter::StartsWith => quote! {.starts_with(#param_ident)},
+      ColFilter::Contains => quote! {.contains(#param_ident)},
+      ColFilter::Like => quote! {.like(#param_ident)},
+      ColFilter::NotLike => quote! {.not_like(#param_ident)},
+      ColFilter::IsIn => quote! {.is_in(#param_ident)},
+      ColFilter::IsNotIn => quote! {.is_not_in(#param_ident)},
+      ColFilter::IsNull => quote! {.is_null()},
+      ColFilter::IsNotNull => quote! {.is_not_null()},
+    }
+  }
 }
 
 impl ColFilter {
@@ -265,7 +289,7 @@ impl ColFilter {
         match iter.peek() {
           Some(&&"with") => {
             iter.next();
-            Some(ColFilter::EndWith)
+            Some(ColFilter::EndsWith)
           },
           Some(&&next) => {
             return Err(syn::Error::new(
@@ -417,7 +441,8 @@ mod tests {
 
   #[test]
   fn test_filter_gte() {
-    let ParseToken::FindBy(cols) = ParseToken::parse("find_by_age_gte").unwrap() else {
+    let result = ParseToken::parse("find_by_age_gte").unwrap();
+    let ParseToken::FindBy(cols) = result else {
       panic!("expected FindBy");
     };
 
@@ -426,7 +451,8 @@ mod tests {
 
   #[test]
   fn test_filter_lt() {
-    let ParseToken::FindBy(cols) = ParseToken::parse("find_by_price_lt").unwrap() else {
+    let result = ParseToken::parse("find_by_price_lt").unwrap();
+    let ParseToken::FindBy(cols) = result else {
       panic!("expected FindBy");
     };
 
@@ -435,7 +461,8 @@ mod tests {
 
   #[test]
   fn test_filter_lte() {
-    let ParseToken::FindBy(cols) = ParseToken::parse("find_by_price_lte").unwrap() else {
+    let result = ParseToken::parse("find_by_price_lte").unwrap();
+    let ParseToken::FindBy(cols) = result else {
       panic!("expected FindBy");
     };
 
@@ -484,7 +511,7 @@ mod tests {
       panic!("expected FindBy");
     };
 
-    assert_eq!(cols[0].filters, vec![ColFilter::EndWith]);
+    assert_eq!(cols[0].filters, vec![ColFilter::EndsWith]);
   }
 
   #[test]

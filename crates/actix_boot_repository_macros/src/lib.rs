@@ -2,9 +2,8 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{ItemFn, TraitItem, Type, parse_macro_input, Meta, Token, MetaNameValue, ItemTrait, Path};
-use syn::punctuated::Punctuated;
-use crate::generator::generate_repository_function;
+use syn::{TraitItem, parse_macro_input, ItemTrait, Path};
+use crate::generator::generate_query;
 
 mod generator;
 mod parse;
@@ -41,7 +40,7 @@ fn impl_repository(attr: RepositoryAttr, item: ItemTrait) -> syn::Result<proc_ma
       TraitItem::Fn(function) => Some(function),
       _ => return None,
     })
-    .map(|function| generate_repository_function(function, &module))
+    .map(|function| generate_query(function, &module))
     .collect::<syn::Result<Vec<_>>>()?;
 
   Ok(quote! {
