@@ -248,9 +248,45 @@ async fn find_all_by_status_offset_limit(&self, status: &str, offset: u64, limit
 ```
 
 #### `_paginate`
+Returns a `Paginator<Model>` with pagination metadata.
+
 ```rust
+use actix_boot::repository::Paginator;
+
 async fn find_all_by_status_paginate(&self, status: &str, page: u64, per_page: u64)
-  -> Result<Vec<Model>, DbErr>;
+  -> Result<Paginator<Model>, DbErr>;
+```
+
+The `Paginator` struct provides:
+- `items: Vec<Model>` - The actual data items for the current page
+- `page: u64` - Current page number (1-indexed)
+- `per_page: u64` - Number of items per page
+- `total_items: u64` - Total number of items across all pages
+- `total_pages: u64` - Total number of pages
+
+Pagination helper methods:
+- `has_next() -> bool` - Check if there's a next page
+- `has_prev() -> bool` - Check if there's a previous page
+- `next_page() -> Option<u64>` - Get next page number (None if on last page)
+- `prev_page() -> Option<u64>` - Get previous page number (None if on first page)
+- `is_first_page() -> bool` - Check if on first page
+- `is_last_page() -> bool` - Check if on last page
+
+Example usage:
+```rust
+let result = repository.find_all_by_status_paginate("active", 1, 10).await?;
+
+println!("Page {} of {}", result.page, result.total_pages);
+println!("Total items: {}", result.total_items);
+println!("Items on this page: {}", result.items.len());
+
+if result.has_next() {
+  println!("Next page: {}", result.next_page().unwrap());
+}
+
+if result.has_prev() {
+  println!("Previous page: {}", result.prev_page().unwrap());
+}
 ```
 
 ### Distinct
@@ -361,7 +397,8 @@ Column names in function signatures use snake_case but are automatically convert
 ## Supported Return Types
 
 - `Result<Option<Model>, DbErr>` - Single record queries
-- `Result<Vec<Model>, DbErr>` - Multiple record queries
+- `Result<Vec<Model>, DbErr>` - Multiple record queries (without pagination)
+- `Result<Paginator<Model>, DbErr>` - Paginated queries (when using `_paginate` modifier)
 - `Result<u64, DbErr>` - Count queries
 - `Result<bool, DbErr>` - Exists queries
 - `Result<DeleteResult, DbErr>` - Delete operations

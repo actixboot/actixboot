@@ -46,7 +46,7 @@ pub trait PostRepositoryBase {
     text: &str,
     page: u64,
     per_page: u64,
-  ) -> Result<Vec<post::Model>, sea_orm::DbErr>;
+  ) -> Result<actix_boot::repository::Paginator<post::Model>, sea_orm::DbErr>;
 
   async fn find_all_by_text_distinct(&self, text: &str)
   -> Result<Vec<post::Model>, sea_orm::DbErr>;
@@ -93,6 +93,7 @@ async fn main() -> std::io::Result<()> {
     app.configure(|app, ctx| {
       app.app_data(PostRepository::get_or_create(ctx));
       app.service(test);
+      app.service(paginated_posts);
     });
   })
   .await
@@ -106,4 +107,14 @@ async fn test(post_repository: Data<PostRepository>) -> impl Responder {
       .await
       .unwrap(),
   )
+}
+
+#[get("/posts/paginated")]
+async fn paginated_posts(post_repository: Data<PostRepository>) -> impl Responder {
+  let page_result = post_repository
+    .find_all_by_text_paginate("haha", 2, 10)
+    .await
+    .unwrap();
+
+  Json(page_result)
 }

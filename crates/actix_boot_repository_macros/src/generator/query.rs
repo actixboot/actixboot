@@ -1,6 +1,6 @@
 use quote::quote;
 use syn::Path;
-use crate::parse::{QuerySpec, UpdateSpec, AggregateSpec};
+use crate::parse::{QuerySpec, UpdateSpec, AggregateSpec, QueryModifier};
 use super::filter::{FilterParam, generate_all_filters};
 use super::modifiers::generate_modifiers;
 
@@ -29,19 +29,58 @@ pub fn build_find_all_by_query(
   params: &[FilterParam],
   module: &Path,
 ) -> syn::Result<proc_macro2::TokenStream> {
-  let filters = generate_all_filters(&spec.filters, params, module)?;
-  let modifiers = generate_modifiers(&spec.modifiers, module)?;
+  let has_paginate = spec.modifiers.iter().any(|m| matches!(m, QueryModifier::Paginate));
 
-  Ok(quote! {
-    {
-      use sea_orm::{QueryOrder, QuerySelect};
-      #module::Entity::find()
-        #filters
-        #modifiers
-        .all(&self.db)
-        .await
-    }
-  })
+  if has_paginate {
+    let filters = generate_all_filters(&spec.filters, params, module)?;
+
+    Ok(quote! {
+      {
+        use sea_orm::{QueryOrder, QuerySelect};
+        use actix_boot::repository::Paginator;
+
+        let total_items = #module::Entity::find()
+          #filters
+          .count(&self.db)
+          .await?;
+
+        let total_pages = if per_page > 0 {
+          (total_items + per_page - 1) / per_page
+        } else {
+          0
+        };
+
+        let items = #module::Entity::find()
+          #filters
+          .offset((page.saturating_sub(1)) * per_page)
+          .limit(per_page)
+          .all(&self.db)
+          .await?;
+
+        Ok(Paginator {
+          items,
+          page,
+          per_page,
+          total_items,
+          total_pages,
+        })
+      }
+    })
+  } else {
+    let filters = generate_all_filters(&spec.filters, params, module)?;
+    let modifiers = generate_modifiers(&spec.modifiers, module)?;
+
+    Ok(quote! {
+      {
+        use sea_orm::{QueryOrder, QuerySelect};
+        #module::Entity::find()
+          #filters
+          #modifiers
+          .all(&self.db)
+          .await
+      }
+    })
+  }
 }
 
 pub fn build_count_by_query(
